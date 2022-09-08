@@ -1,7 +1,7 @@
 import itertools
 from typing import Optional
 import z3
-from core import Direction, Piece, Puzzle, PuzzleSolution
+from traintracks.core import Direction, Piece, Puzzle, PuzzleSolution
 
 
 class Constraints:
@@ -83,7 +83,7 @@ class Constraints:
                 (c > 0, r != self.puzzle.start_row, Direction.WEST),
             ]:
                 if cond:
-                    nr, nc = direction.increment(r, c)
+                    nr, nc = direction.move(r, c)
                     res.append(
                         z3.Implies(
                             self.grid[r][c] & int(direction) != 0,

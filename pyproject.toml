@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "traintracks"
+description = ''
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+  "click",
+  "z3-solver",
+]
+dynamic = ["version"]
+
+[project.scripts]
+traintracks = "traintracks.cli:cli"
+
+[tool.hatch.version]
+path = "traintracks/__about__.py"
+
+[project.optional-dependencies]
+tests = [
+  "pytest",
+]

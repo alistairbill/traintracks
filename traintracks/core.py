@@ -1,4 +1,4 @@
-from enum import IntEnum, IntFlag
+from enum import Enum, IntEnum, IntFlag, unique
 from dataclasses import dataclass
 from copy import copy
 
@@ -17,7 +17,7 @@ class Direction(IntFlag):
             Direction.WEST: Direction.EAST,
         }[self]
 
-    def increment(self, row: int, col: int) -> tuple[int, int]:
+    def move(self, row: int, col: int) -> tuple[int, int]:
         return {
             Direction.NORTH: (row - 1, col),
             Direction.EAST: (row, col + 1),
@@ -47,6 +47,17 @@ class Piece(IntEnum):
             "┗": Piece.NE,
         }[pipe]
 
+    @classmethod
+    def from_chris(cls, name: str) -> "Piece":
+        return {
+            "SW": Piece.SW,
+            "EW": Piece.EW,
+            "SE": Piece.SE,
+            "NW": Piece.NW,
+            "NS": Piece.NS,
+            "NE": Piece.NE,
+        }[name]
+
     def to_pipe(self) -> str:
         return {
             Piece.EMPTY: ".",
@@ -59,15 +70,21 @@ class Piece(IntEnum):
         }[self]
 
 
+@unique
+class PuzzleFormat(str, Enum):
+    PIPES = "pipes"
+    CHRIS = "chris"
+
+
 @dataclass
 class Puzzle:
-    name: str
     grid_size: int
     col_totals: list[int]
     row_totals: list[int]
     start_row: int
     end_col: int
     start_positions: dict[tuple[int, int], Piece]
+    name: str = ""
 
     def serialise(self) -> str:
         res = self.name + "\n"
@@ -83,7 +100,14 @@ class Puzzle:
         return res
 
     @classmethod
-    def parse(cls, raw: str) -> "Puzzle":
+    def parse(cls, raw: str, format: PuzzleFormat) -> "Puzzle":
+        if format == PuzzleFormat.PIPES:
+            return cls.parse_pipes(raw)
+        else:
+            return cls.parse_chris(raw)
+
+    @classmethod
+    def parse_pipes(cls, raw: str) -> "Puzzle":
         lines = raw.splitlines()
         name = lines[0]
         col_totals = [int(c) for c in lines[1][1:]]
@@ -100,7 +124,23 @@ class Puzzle:
                     start_positions[(r, c)] = Piece.from_pipe(col)
         end_col = lines[-1].index("B") - 1
         return cls(
-            name, grid_size, col_totals, row_totals, start_row, end_col, start_positions
+            grid_size, col_totals, row_totals, start_row, end_col, start_positions, name
+        )
+
+    @classmethod
+    def parse_chris(cls, raw: str) -> "Puzzle":
+        parts = raw.split("-")
+        pieces = parts[-1].split(".")
+        start_row = 8 - int(parts[0][0])
+        end_col = int(parts[0][1]) - 1
+        return cls(
+            grid_size=8,
+            col_totals=[int(t) for t in parts[1]],
+            row_totals=[int(t) for t in parts[2]],
+            start_row=start_row,
+            end_col=end_col,
+            start_positions={(start_row, 0): Piece.EW, (7, end_col): Piece.NS}
+            | {(8 - int(p[1]), int(p[0]) - 1): Piece.from_chris(p[2:]) for p in pieces},
         )
 
 

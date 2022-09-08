@@ -2,12 +2,12 @@ import itertools
 import random
 from typing import Optional
 import z3
-from core import Direction, Piece, Puzzle, PuzzleSolution
-from constraints import Constraints
+from traintracks.core import Direction, Piece, Puzzle, PuzzleSolution
+from traintracks.constraints import Constraints
 
 
 class Generator(Constraints):
-    def __init__(self, grid_size: int, puzzle_id: str = "gen"):
+    def __init__(self, grid_size: int, name: str = "gen"):
         start_row = random.randrange(1, grid_size - 1)
         end_col = random.randrange(1, grid_size - 1)
         start_pieces = [k for k in Piece if k & Direction.WEST != 0]
@@ -23,13 +23,13 @@ class Generator(Constraints):
 
         super().__init__(
             Puzzle(
-                puzzle_id,
                 grid_size,
                 [],
                 [],
                 start_row,
                 end_col,
                 start_positions,
+                name,
             )
         )
         self.solver.add(self.max_line_constraints())
@@ -54,17 +54,3 @@ class Generator(Constraints):
                 sum(cell != 0 for cell in col) for col in zip(*sol.complete_grid)
             ]
         return sol
-
-
-def main():
-    for size, i in itertools.product([6, 8, 10, 12], range(100)):
-        sol = Generator(size, f"gen_{size}#{i}").solution()
-        if sol is None:
-            continue
-        with open("gen.txt", "a", encoding="utf-8") as file:
-            file.write(sol.puzzle.serialise())
-            file.write("\n")
-
-
-if __name__ == "__main__":
-    main()

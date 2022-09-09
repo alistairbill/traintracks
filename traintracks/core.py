@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from copy import copy
 
 
+@unique
 class Direction(IntFlag):
     NORTH = 8
     EAST = 4
@@ -26,6 +27,7 @@ class Direction(IntFlag):
         }[self]
 
 
+@unique
 class Piece(IntEnum):
     EMPTY = 0
     SW = Direction.SOUTH | Direction.WEST
@@ -69,6 +71,16 @@ class Piece(IntEnum):
             Piece.NE: "┗",
         }[self]
 
+    def to_chris(self) -> str:
+        return {
+            Piece.SW: "SW",
+            Piece.EW: "EW",
+            Piece.SE: "SE",
+            Piece.NW: "NW",
+            Piece.NS: "NS",
+            Piece.NE: "NE",
+        }[self]
+
 
 @unique
 class PuzzleFormat(str, Enum):
@@ -86,7 +98,13 @@ class Puzzle:
     start_positions: dict[tuple[int, int], Piece]
     name: str = ""
 
-    def serialise(self) -> str:
+    def serialise(self, format: PuzzleFormat) -> str:
+        return {
+            PuzzleFormat.PIPES: self.serialise_pipes,
+            PuzzleFormat.CHRIS: self.serialise_chris,
+        }[format]()
+
+    def serialise_pipes(self) -> str:
         res = self.name + "\n"
         res += " "
         res += "".join(map(str, self.col_totals)) + "\n"
@@ -99,12 +117,26 @@ class Puzzle:
         res += " " * (self.end_col + 1) + "B\n"
         return res
 
+    def serialise_chris(self) -> str:
+        return "-".join(
+            [
+                f"{8 - self.start_row}{self.end_col + 1}",
+                "".join(map(str, self.col_totals)),
+                "".join(map(str, self.row_totals)),
+                ".".join(
+                    f"{c + 1}{8 - r}{piece.to_chris()}"
+                    for (r, c), piece in self.start_positions.items()
+                    if piece != Piece.EMPTY
+                ),
+            ]
+        )
+
     @classmethod
     def parse(cls, raw: str, format: PuzzleFormat) -> "Puzzle":
-        if format == PuzzleFormat.PIPES:
-            return cls.parse_pipes(raw)
-        else:
-            return cls.parse_chris(raw)
+        return {
+            PuzzleFormat.PIPES: cls.parse_pipes,
+            PuzzleFormat.CHRIS: cls.parse_chris,
+        }[format](raw)
 
     @classmethod
     def parse_pipes(cls, raw: str) -> "Puzzle":
@@ -149,7 +181,7 @@ class PuzzleSolution:
     puzzle: Puzzle
     complete_grid: list[list[Piece]]
 
-    def serialise(self) -> str:
+    def serialise(self, format: PuzzleFormat) -> str:
         # slight hack: make every piece a starting piece
         puzzle = copy(self.puzzle)
         puzzle.start_positions = {
@@ -157,4 +189,4 @@ class PuzzleSolution:
             for r, row in enumerate(self.complete_grid)
             for c, val in enumerate(row)
         }
-        return puzzle.serialise()
+        return puzzle.serialise(format)

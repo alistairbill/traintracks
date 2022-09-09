@@ -18,13 +18,19 @@ def cli():
 @click.argument("output", type=click.File("w"))
 @click.option("--size", default=8, help="Grid size of each puzzle.")
 @click.option("-n", default=1, help="Number of puzzles to generate.")
-def generate(output: io.TextIOWrapper, size: int, n: int):
+@click.option(
+    "--format",
+    default=PuzzleFormat.PIPES,
+    type=click.Choice(PuzzleFormat),  #  type: ignore
+    help="Puzzle output format.",
+)
+def generate(output: io.TextIOWrapper, size: int, n: int, format: PuzzleFormat):
     """Generate puzzles."""
     for i in range(n):
         for _ in range(GENERATE_RETRIES):
             sol = Generator(size, f"gen_{size}#{i}").solution()
             if sol is not None:
-                output.write(sol.puzzle.serialise())
+                output.write(sol.puzzle.serialise(format))
                 output.write("\n")
                 break
         else:
@@ -35,14 +41,27 @@ def generate(output: io.TextIOWrapper, size: int, n: int):
 @cli.command()
 @click.argument("input", type=click.File("r"))
 @click.option(
-    "--format", default="pipes", type=click.Choice(PuzzleFormat)  #  type: ignore
+    "--input-format",
+    default=PuzzleFormat.PIPES,
+    type=click.Choice(PuzzleFormat),  #  type: ignore
+    help="Puzzle input format.",
 )
-def solve(input: io.TextIOWrapper, format: PuzzleFormat):
+@click.option(
+    "--output-format",
+    default=PuzzleFormat.PIPES,
+    type=click.Choice(PuzzleFormat),  #  type: ignore
+    help="Puzzle output format.",
+)
+def solve(
+    input: io.TextIOWrapper, input_format: PuzzleFormat, output_format: PuzzleFormat
+):
     """Solve puzzles."""
-    for raw in input.read().split("\n\n" if format == PuzzleFormat.PIPES else "\n"):
-        puzzle = Puzzle.parse(raw, format)
+    for raw in input.read().split(
+        "\n\n" if input_format == PuzzleFormat.PIPES else "\n"
+    ):
+        puzzle = Puzzle.parse(raw, input_format)
         sol = Solver(puzzle).solution()
         if sol is None:
             click.echo(f"{puzzle.name}: no solution found")
         else:
-            click.echo(sol.serialise())
+            click.echo(sol.serialise(output_format))

@@ -119,7 +119,7 @@ class Puzzle:
             if row[0] == "A":
                 start_row = r
             row_totals[r] = int(row[-1])
-            for c, col in enumerate(row[1]):
+            for c, col in enumerate(row[1:-1]):
                 if col != ".":
                     start_positions[(r, c)] = Piece.from_pipe(col)
         end_col = lines[-1].index("B") - 1

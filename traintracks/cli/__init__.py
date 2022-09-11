@@ -56,8 +56,10 @@ def solve(
     input: io.TextIOWrapper, input_format: PuzzleFormat, output_format: PuzzleFormat
 ):
     """Solve puzzles."""
-    for raw in input.read().split(
-        "\n\n" if input_format == PuzzleFormat.PIPES else "\n"
+    for raw in (
+        input.read()
+        .strip()
+        .split("\n\n" if input_format == PuzzleFormat.PIPES else "\n")
     ):
         puzzle = Puzzle.parse(raw, input_format)
         sol = Solver(puzzle).solution()

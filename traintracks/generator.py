@@ -10,16 +10,19 @@ class Generator(Constraints):
     def __init__(self, grid_size: int, name: str = "gen"):
         start_row = random.randrange(1, grid_size - 1)
         end_col = random.randrange(1, grid_size - 1)
-        start_pieces = [k for k in Piece if k & Direction.WEST != 0]
-        end_pieces = [k for k in Piece if k & Direction.SOUTH != 0]
+        start_pieces = [p for p in Piece if p & Direction.WEST != 0]
+        end_pieces = [p for p in Piece if p & Direction.SOUTH != 0]
         start_positions = {
             (start_row, 0): random.choice(start_pieces),
             (grid_size - 1, end_col): random.choice(end_pieces),
         }
-        for _ in range(0, random.randrange(1, 5)):
+
+        # fix between 1 and 3 pieces in the middle
+        nonempty_pieces = [p for p in Piece if p != Piece.EMPTY]
+        for _ in range(random.randint(1, 3)):
             row = random.randrange(1, grid_size - 1)
             col = random.randrange(1, grid_size - 1)
-            start_positions[(row, col)] = random.choice(list(Piece))
+            start_positions[(row, col)] = random.choice(nonempty_pieces)
 
         super().__init__(
             Puzzle(
